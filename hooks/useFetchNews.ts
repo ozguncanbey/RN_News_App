@@ -14,8 +14,7 @@ interface UseFetchNewsResult {
     articles: NewsArticle[];
     isLoading: boolean;
     error: string | null;
-    // İhtiyaç olursa veri çekmeyi yeniden tetikleyecek bir fonksiyon da eklenebilir
-    // refetch: () => void;
+    refetch: (params?: UseFetchNewsParams) => Promise<void>;
 }
 
 export const useFetchNews = (params: UseFetchNewsParams = {}): UseFetchNewsResult => {
@@ -26,14 +25,14 @@ export const useFetchNews = (params: UseFetchNewsParams = {}): UseFetchNewsResul
     useEffect(() => {
         const loadNews = async () => {
             setIsLoading(true);
-            setError(null); // Yeni yüklemede eski hatayı temizle
+            setError(null);
 
             try {
                 const data = await fetchNewsArticles(params);
                 setArticles(data.articles);
             } catch (err: any) {
                 setError(err.message || "Haberler yüklenirken bir hata oluştu.");
-                setArticles([]); // Hata durumunda listeyi temizle
+                setArticles([]);
             } finally {
                 setIsLoading(false);
             }
@@ -41,15 +40,30 @@ export const useFetchNews = (params: UseFetchNewsParams = {}): UseFetchNewsResul
 
         loadNews();
 
-        // useEffect temizleme fonksiyonu: Eğer component unmount edilirse devam eden fetch işlemini iptal etmek için kullanılabilir,
-        // ancak fetch API'nin kendisi doğrudan iptali biraz zahmetli yapar.
-        // Daha gelişmiş fetch kütüphaneleri (axios gibi) veya AbortController kullanılabilir.
-        // Şimdilik basit tutalım.
         return () => {
-            // Cleanup logic here if needed
         };
 
-    }, [params.query, params.sortType, params.country, params.page, params.pageSize]); // Parametreler değiştiğinde useEffect tekrar çalışsın
+    }, [params.query, params.sortType, params.country, params.page, params.pageSize]);
 
-    return { articles, isLoading, error };
+    return {
+        articles, isLoading, error, refetch: async (newParams) => { // refetch fonksiyonu burada tanımlandı
+            const paramsToUse = newParams ? newParams : params;
+            const paramsToSend = {
+                ...paramsToUse,
+                country: paramsToUse.query?.trim() === '' ? paramsToUse.country : undefined,
+                sortType: paramsToUse.query?.trim() !== '' ? paramsToUse.sortType : undefined,
+            };
+            setIsLoading(true);
+            setError(null);
+            try {
+                const data = await fetchNewsArticles(paramsToSend);
+                setArticles(data.articles);
+            } catch (err: any) {
+                setError(err.message || "Haberler yüklenirken bir hata oluştu.");
+                setArticles([]);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
 };

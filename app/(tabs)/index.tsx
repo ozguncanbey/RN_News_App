@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo, useLayoutEffect, useCallback } from 'react'; // useLayoutEffect, useCallback import edildi
+import React, { useEffect, useState, useRef, useMemo, useLayoutEffect, useCallback } from 'react';
 import { View, Text, TextInput, ActivityIndicator, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, TextInputProps } from 'react-native';
 import { useRouter } from 'expo-router';
 import NewsList from '../../components/NewsList';
@@ -7,7 +7,7 @@ import EmptyState from '../../components/EmptyState';
 import FilterMenu from '../../components/FilterMenu';
 import { COUNTRIES } from '../../constants/countries';
 import { SORT_TYPES } from '../../constants/sortTypes';
-import { useFetchNews } from '../../hooks/useFetchNews';
+import { useFetchNews } from '../../hooks/useFetchNews'; // useFetchNews hook'u import edildi
 import { NewsArticle } from '../../types/news';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native'; // useNavigation import edildi
@@ -21,7 +21,8 @@ const HomeScreen = () => {
   const [country, setCountry] = useState('us');
   const [sortType, setSortType] = useState<'publishedAt' | 'popularity' | undefined>('publishedAt');
 
-  const { articles, isLoading, error } = useFetchNews({
+  // useFetchNews hook'undan refetch fonksiyonunu al
+  const { articles, isLoading, error, refetch } = useFetchNews({
     query,
     country: query.trim() === '' ? country : undefined,
     sortType: query.trim() !== '' ? sortType : undefined,
@@ -43,14 +44,13 @@ const HomeScreen = () => {
     inputRef.current?.blur();
   }, []); // Bağımlılık yok
 
-  const handleRefresh = useCallback(() => { // useCallback eklendi
-    if (query !== '') {
-      setQuery('');
-    } else {
-      console.log("Refreshing...");
-      // Gerçek yenileme için useFetchNews hook'una refetch fonksiyonu eklenebilir
-    }
-  }, [query]); // query bağımlılığı
+  // Yenileme fonksiyonu güncellendi
+  const handleRefresh = useCallback(async () => { // async eklendi
+    console.log("Mevcut sorgu ile yenileniyor:", query);
+    // useFetchNews hook'undan gelen refetch fonksiyonunu çağır
+    // Parametre göndermezsek, hook'un en son aldığı initialParams değerlerini kullanır
+    await refetch();
+  }, [query, refetch]); // refetch bağımlılığı eklendi
 
   const handleFilterSelect = useCallback((value: string) => { // useCallback eklendi
     if (query.trim() === '') {
@@ -75,14 +75,12 @@ const HomeScreen = () => {
   const showEmptyState = !isLoading && !articles.length && !error;
   const showList = articles.length > 0;
 
-  // Filtre menüsünü açacak butonu render eden fonksiyon
   const renderHeaderRight = useCallback(() => (
     <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginRight: 15 }}> {/* Sağdan boşluk ayarı */}
       <MaterialIcons name="filter-list" size={24} color="#fff" /> {/* Başlık rengiyle uyumlu ikon rengi */}
     </TouchableOpacity>
   ), [setMenuVisible]); // setMenuVisible bağımlılığı
 
-  // Header seçeneklerini ayarlamak için useLayoutEffect kullanıyoruz
   useLayoutEffect(() => {
     navigation.setOptions({ // navigation.setOptions kullanıldı
       headerRight: renderHeaderRight,
@@ -115,9 +113,6 @@ const HomeScreen = () => {
           )}
         </View>
         {/* Filtre butonu header'a taşındı */}
-        {/* <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginLeft: 8 }}>
-          <MaterialIcons name="filter-list" size={24} color="#333" />
-        </TouchableOpacity> */}
       </View>
 
       {isLoading && !articles.length ? (
@@ -129,7 +124,7 @@ const HomeScreen = () => {
           articles={articles}
           onItemPress={handleItemPress}
           refreshing={isLoading}
-          onRefresh={handleRefresh}
+          onRefresh={handleRefresh} // Güncellenmiş handleRefresh fonksiyonu bağlandı
         />
       ) : null}
 
@@ -144,12 +139,14 @@ const HomeScreen = () => {
   );
 };
 
+export default HomeScreen;
+
 const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    paddingHorizontal: 0,
+    paddingHorizontal: 0, // Padding kaldırıldı
   } as ViewStyle,
   inputWrapper: {
     flexDirection: 'row',
@@ -175,7 +172,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: Colors.light.tint, // Renk Colors.light.tint olarak güncellendi
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 4,
@@ -188,5 +185,3 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   } as TextStyle,
 });
-
-export default HomeScreen;
