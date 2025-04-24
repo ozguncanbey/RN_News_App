@@ -11,22 +11,21 @@ import {
     TextStyle,
     ImageStyle,
 } from 'react-native';
-import { SCREEN_WIDTH } from '../constants/dimensions'; // Import yolu güncellendi
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Expo projesi için import
-import { NewsArticle } from '../types/news'; // NewsArticle tipini import ettik
+import { SCREEN_WIDTH } from '../constants/dimensions';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { NewsArticle } from '../types/news';
 
 const imageSize = SCREEN_WIDTH * 0.3;
 
 interface NewsListProps {
-    articles: NewsArticle[]; // Tanımladığımız NewsArticle tipini kullandık
+    articles: NewsArticle[];
     onItemPress?: (article: NewsArticle) => void;
     onDelete?: (url: string) => void;
     deletingMode?: boolean;
     refreshing?: boolean;
-    onRefresh?: () => void;
-    onEndReached?: () => void;
+    onRefresh?: (() => void | Promise<void>) | null; // onRefresh tipi null'ı içerecek şekilde güncellendi
+    onEndReached?: (() => void | Promise<void>) | null; // onEndReached tipi null'ı içerecek şekilde güncellendi
     loadingMore?: boolean;
-    // HeaderComponent veya EmptyComponent gibi FlatList prop'larını da buraya ekleyebilirsiniz
     ListEmptyComponent?: React.ComponentType<any> | React.ReactElement | null;
 }
 
@@ -36,19 +35,18 @@ const NewsList: React.FC<NewsListProps> = ({
     onDelete,
     deletingMode = false,
     refreshing = false,
-    onRefresh, // undefined varsayılan değeri kullanmak yerine tipini belirttik
-    onEndReached, // undefined varsayılan değeri kullanmak yerine tipini belirttik
+    onRefresh,
+    onEndReached,
     loadingMore = false,
-    ListEmptyComponent, // Ekledik
+    ListEmptyComponent,
 }) => {
-    const renderItem = ({ item }: { item: NewsArticle }) => ( // item tipi NewsArticle olarak güncellendi
+    const renderItem = ({ item }: { item: NewsArticle }) => (
         <View style={styles.itemRow}>
             <TouchableOpacity
                 style={styles.card}
                 onPress={() => onItemPress?.(item)}
-                activeOpacity={0.8} // Tıklama geri bildirimi için
+                activeOpacity={0.8}
             >
-                {/* NewsArticle'da urlToImage olarak tanımladık, imageUrl değil */}
                 {item.urlToImage ? (
                     <Image
                         source={{ uri: item.urlToImage }}
@@ -64,7 +62,6 @@ const NewsList: React.FC<NewsListProps> = ({
                     <Text numberOfLines={4} style={styles.title}>
                         {item.title}
                     </Text>
-                    {/* Description alanı NewsArticle'da nullable idi, kontrol edelim */}
                     {item.description ? (
                         <Text numberOfLines={3} style={styles.description}>
                             {item.description}
@@ -87,21 +84,19 @@ const NewsList: React.FC<NewsListProps> = ({
     return (
         <FlatList
             data={articles}
-            // keyExtractor için url ve publishedAt kullanmak daha güvenli,
-            // çünkü başlıklar aynı olabilir.
             keyExtractor={(item) => item.url + '-' + item.publishedAt}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
             refreshing={refreshing}
             onRefresh={onRefresh}
             onEndReached={onEndReached}
-            onEndReachedThreshold={0.5} // Eşik değeri ayarlandı, 0.75 biraz yüksek olabilir
-            ListFooterComponent={ // isLoadingMore propu yerine loadingMore kullandık
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
                 loadingMore ? (
                     <ActivityIndicator size="small" color="#007AFF" style={{ marginVertical: 16 }} />
                 ) : null
             }
-            ListEmptyComponent={ListEmptyComponent} // EmptyState bileşeni buraya verilebilir
+            ListEmptyComponent={ListEmptyComponent}
         />
     );
 };
@@ -119,24 +114,22 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         flex: 1,
         alignItems: 'stretch',
-        // iOS shadow
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.18,
         shadowRadius: 1.00,
-        // Android shadow
         elevation: 1,
     } as ViewStyle,
     image: {
         width: imageSize,
-        aspectRatio: 1, // Orjinal kodda imageSize'a eşitlenmişti, aspectRatio daha esnek
+        aspectRatio: 1,
         borderRadius: 8,
         backgroundColor: '#ccc',
         marginRight: 12,
     } as ImageStyle,
     placeholder: {
         width: imageSize,
-        aspectRatio: 1, // Orjinal kodda imageSize'a eşitlenmişti, aspectRatio daha esnek
+        aspectRatio: 1,
         borderRadius: 8,
         backgroundColor: '#007AFF',
         justifyContent: 'center',
@@ -170,7 +163,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 8,
         marginLeft: 8,
-        justifyContent: 'center', // İkonu ortalamak için
+        justifyContent: 'center',
         alignItems: 'center',
     } as ViewStyle,
 });

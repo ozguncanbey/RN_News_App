@@ -7,22 +7,30 @@ import EmptyState from '../../components/EmptyState';
 import FilterMenu from '../../components/FilterMenu';
 import { COUNTRIES } from '../../constants/countries';
 import { SORT_TYPES } from '../../constants/sortTypes';
-import { useFetchNews } from '../../hooks/useFetchNews'; // useFetchNews hook'u import edildi
+import { useFetchNews } from '../../hooks/useFetchNews';
 import { NewsArticle } from '../../types/news';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native'; // useNavigation import edildi
+import { useNavigation } from '@react-navigation/native';
 import Colors from '@/constants/Colors';
 
 const HomeScreen = () => {
   const router = useRouter();
-  const navigation = useNavigation(); // useNavigation hook'u çağrıldı
+  const navigation = useNavigation();
 
   const [query, setQuery] = useState('');
   const [country, setCountry] = useState('us');
   const [sortType, setSortType] = useState<'publishedAt' | 'popularity' | undefined>('publishedAt');
 
-  // useFetchNews hook'undan refetch fonksiyonunu al
-  const { articles, isLoading, error, refetch } = useFetchNews({
+  const {
+    articles,
+    isLoading,
+    isLoadingMore,
+    error,
+    refetch,
+    loadMore,
+    totalResults,
+    hasMore,
+  } = useFetchNews({
     query,
     country: query.trim() === '' ? country : undefined,
     sortType: query.trim() !== '' ? sortType : undefined,
@@ -33,59 +41,69 @@ const HomeScreen = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
-  const handleSearch = useCallback(() => { // useCallback eklendi
+  const handleSearch = useCallback(() => {
     setQuery(searchText.trim());
     inputRef.current?.blur();
-  }, [searchText]); // searchText bağımlılığı
+  }, [searchText]);
 
-  const handleCancel = useCallback(() => { // useCallback eklendi
+  const handleCancel = useCallback(() => {
     setSearchText('');
     setQuery('');
     inputRef.current?.blur();
-  }, []); // Bağımlılık yok
+  }, []);
 
-  // Yenileme fonksiyonu güncellendi
-  const handleRefresh = useCallback(async () => { // async eklendi
+  const handleRefresh = useCallback(async () => {
     console.log("Mevcut sorgu ile yenileniyor:", query);
-    // useFetchNews hook'undan gelen refetch fonksiyonunu çağır
-    // Parametre göndermezsek, hook'un en son aldığı initialParams değerlerini kullanır
     await refetch();
-  }, [query, refetch]); // refetch bağımlılığı eklendi
+  }, [query, refetch]);
 
-  const handleFilterSelect = useCallback((value: string) => { // useCallback eklendi
+  const handleFilterSelect = useCallback((value: string) => {
     if (query.trim() === '') {
       setCountry(value);
     } else {
       setSortType(value as 'popularity' | 'publishedAt');
     }
     setMenuVisible(false);
-  }, [query]); // query bağımlılığı
+  }, [query]);
 
-  const filterOptions = useMemo(() => { // useMemo eklendi
+  const filterOptions = useMemo(() => {
     return query.trim() === '' ? COUNTRIES : SORT_TYPES;
-  }, [query]); // query bağımlılığı
+  }, [query]);
 
-  const handleItemPress = useCallback((item: NewsArticle) => { // useCallback eklendi
+  const handleItemPress = useCallback((item: NewsArticle) => {
     router.push({
       pathname: '/news/[id]',
       params: { id: item.url.split('/').pop() || 'detail', article: JSON.stringify(item) },
     });
-  }, [router]); // router bağımlılığı
+  }, [router]);
 
   const showEmptyState = !isLoading && !articles.length && !error;
   const showList = articles.length > 0;
 
   const renderHeaderRight = useCallback(() => (
-    <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginRight: 15 }}> {/* Sağdan boşluk ayarı */}
-      <MaterialIcons name="filter-list" size={24} color="#fff" /> {/* Başlık rengiyle uyumlu ikon rengi */}
+    <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginRight: 15 }}>
+      <MaterialIcons name="filter-list" size={24} color="#fff" />
     </TouchableOpacity>
-  ), [setMenuVisible]); // setMenuVisible bağımlılığı
+  ), [setMenuVisible]);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ // navigation.setOptions kullanıldı
+    navigation.setOptions({
       headerRight: renderHeaderRight,
     });
-  }, [navigation, renderHeaderRight]); // navigation ve renderHeaderRight bağımlılıkları
+  }, [navigation, renderHeaderRight]);
+
+  const renderListEmptyComponent = useCallback(() => {
+    if (isLoading) {
+      return null;
+    }
+    if (error) {
+      return <EmptyState message={`Hata: ${error}`} />;
+    }
+    if (!articles.length && !isLoadingMore) {
+      return <EmptyState message="Haber bulunamadı." />;
+    }
+    return null;
+  }, [isLoading, error, articles.length, isLoadingMore]);
 
 
   return (
@@ -97,7 +115,7 @@ const HomeScreen = () => {
             ref={inputRef}
             style={styles.searchInput}
             placeholder="Search news..."
-            placeholderTextColor="#888" // Placeholder metin rengini belirttik
+            placeholderTextColor="#888"
             value={searchText}
             onChangeText={setSearchText}
             onSubmitEditing={handleSearch}
@@ -117,17 +135,18 @@ const HomeScreen = () => {
 
       {isLoading && !articles.length ? (
         <ActivityIndicator size="large" color="#007AFF" style={commonStyles.loader} />
-      ) : showEmptyState ? (
-        <EmptyState message={error ? error : "Haber bulunamadı."} />
-      ) : showList ? (
+      ) : (
         <NewsList
           articles={articles}
           onItemPress={handleItemPress}
           refreshing={isLoading}
-          onRefresh={handleRefresh} // Güncellenmiş handleRefresh fonksiyonu bağlandı
+          onRefresh={handleRefresh}
+          onEndReached={hasMore ? loadMore : null}
+          // onEndReachedThreshold prop'u buradan kaldırıldı
+          loadingMore={isLoadingMore}
+          ListEmptyComponent={renderListEmptyComponent}
         />
-      ) : null}
-
+      )}
 
       <FilterMenu
         visible={menuVisible}
@@ -144,7 +163,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    paddingHorizontal: 0, // Padding kaldırıldı
+    paddingHorizontal: 16,
   } as ViewStyle,
   inputWrapper: {
     flexDirection: 'row',
@@ -163,7 +182,9 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
+    paddingVertical: 4,
     paddingHorizontal: 8,
+    color: '#000',
   } as TextStyle,
   cancelCircle: {
     width: 20,
