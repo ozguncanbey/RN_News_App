@@ -1,31 +1,51 @@
-import { StyleSheet } from 'react-native';
+// Örneğin app/index.tsx veya başka bir ekranda
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+import React from 'react';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { useFetchNews } from '../../hooks/useFetchNews';
+import { NewsArticle } from '../../types/news'; // NewsArticle tipini import etmeyi unutmayın
 
-export default function TabOneScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+const HomeScreen = () => {
+  // Hook'u çağır ve state'leri al
+  // Buraya isterseniz farklı ülke, kategori vb. parametreler gönderebilirsiniz.
+  const { articles, isLoading, error } = useFetchNews({ country: 'us' }); // Örnek: Sadece ABD haberlerini çek
+
+  const renderArticle = ({ item }: { item: NewsArticle }) => (
+    // Burada bir NewsCard bileşeni kullanabilirsiniz (daha önce bahsettiğimiz gibi)
+    <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
+      <Text style={{ fontWeight: 'bold' }}>{item.title}</Text>
+      <Text>{item.source.name}</Text>
+      {/* Daha fazla detay (resim, açıklama) NewsCard bileşeninde gösterilebilir */}
     </View>
   );
-}
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Haberler yükleniyor...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: 'red' }}>Hata: {error}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      <FlatList
+        data={articles}
+        renderItem={renderArticle}
+        keyExtractor={(item) => item.url + item.publishedAt} // Haberlerin benzersiz olduğundan emin olun, URL ve tarih iyi bir kombinasyon olabilir
+      // Pagination eklemek için onEndReached gibi prop'lar burada kullanılır
+      />
+    </View>
+  );
+};
+
+export default HomeScreen; // Expo Router veya React Navigation ile kullanmak için dışa aktar
