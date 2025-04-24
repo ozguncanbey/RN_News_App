@@ -16,7 +16,7 @@ import EmptyState from '../../components/EmptyState';
 import Toast, { ToastRef } from '../../components/Toast';
 import { useRouter } from 'expo-router';
 import { NewsArticle } from '../../types/news';
-import { useNavigation } from '@react-navigation/native'; // useNavigation import edildi
+import { useNavigation, useFocusEffect } from '@react-navigation/native'; // useFocusEffect import edildi
 
 const BookmarkScreen = () => {
     const [bookmarks, setBookmarks] = useState<NewsArticle[]>([]);
@@ -24,9 +24,9 @@ const BookmarkScreen = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const toastRef = useRef<ToastRef>(null);
     const router = useRouter();
-    const navigation = useNavigation(); // useNavigation hook'u çağrıldı
+    const navigation = useNavigation();
 
-    const loadBookmarks = async () => {
+    const loadBookmarks = useCallback(async () => { // loadBookmarks useCallback ile sarmalandı
         setIsRefreshing(true);
         try {
             const saved = await BookmarkService.getBookmarks();
@@ -37,11 +37,20 @@ const BookmarkScreen = () => {
         } finally {
             setIsRefreshing(false);
         }
-    };
+    }, []); // loadBookmarks'ın bağımlılığı yok, bu yüzden stabil kalmalı
 
-    useEffect(() => {
-        loadBookmarks();
-    }, []);
+    // useFocusEffect kullanıyoruz, ekran her odaklandığında çalışacak
+    useFocusEffect(
+        useCallback(() => {
+            console.log('Bookmark Screen Focused - Loading bookmarks...'); // Ekran odaklandığında logla
+            loadBookmarks();
+            // useFocusEffect bir temizleme fonksiyonu döndürebilir
+            return () => {
+                console.log('Bookmark Screen Blurred'); // Ekran odak dışına çıktığında logla
+            };
+        }, [loadBookmarks]) // loadBookmarks fonksiyonu bağımlılık olarak eklendi
+    );
+
 
     const handleItemPress = useCallback((article: NewsArticle) => {
         if (!deletingMode) {
@@ -55,7 +64,7 @@ const BookmarkScreen = () => {
     const handleDelete = useCallback(async (url: string) => {
         try {
             await BookmarkService.removeBookmark(url);
-            await loadBookmarks();
+            await loadBookmarks(); // Silme işleminden sonra listeyi yeniden yükle
             toastRef.current?.show('Bookmark removed.');
         } catch (error) {
             console.error("Error deleting bookmark:", error);
@@ -64,16 +73,16 @@ const BookmarkScreen = () => {
     }, [loadBookmarks, toastRef]);
 
     const handleRefresh = useCallback(async () => {
-        await loadBookmarks();
+        // NewsList componentinin pull-to-refresh özelliği bu fonksiyonu çağıracak
+        await loadBookmarks(); // loadBookmarks zaten isRefreshing durumunu yönetiyor
     }, [loadBookmarks]);
 
     const toggleDeletingMode = useCallback(() => {
         setDeletingMode(prevMode => !prevMode);
     }, []);
 
-    // Header seçeneklerini ayarlamak için useLayoutEffect ve navigation.setOptions kullanıyoruz
     useLayoutEffect(() => {
-        navigation.setOptions({ // router.setOptions yerine navigation.setOptions kullanıldı
+        navigation.setOptions({
             headerRight: () => (
                 <TouchableOpacity onPress={toggleDeletingMode} style={{ marginRight: 15 }}>
                     <MaterialIcons
@@ -84,11 +93,11 @@ const BookmarkScreen = () => {
                 </TouchableOpacity>
             ),
         });
-    }, [navigation, deletingMode, toggleDeletingMode]); // Bağımlılıklar güncellendi
+    }, [navigation, deletingMode, toggleDeletingMode]);
 
 
     const renderEmptyState = useCallback(() => (
-        <EmptyState message={isRefreshing ? "Loading" : "No bookmarked news."} />
+        <EmptyState message={isRefreshing ? "Loading..." : "No Bookmarked news."} />
     ), [isRefreshing]);
 
 
@@ -103,8 +112,8 @@ const BookmarkScreen = () => {
                         onItemPress={handleItemPress}
                         onDelete={handleDelete}
                         deletingMode={deletingMode}
-                        refreshing={isRefreshing}
-                        onRefresh={handleRefresh}
+                        refreshing={isRefreshing} // isRefreshing durumu NewsList'e iletiliyor
+                        onRefresh={handleRefresh} // handleRefresh fonksiyonu NewsList'in onRefresh propuna bağlanıyor
                         ListEmptyComponent={renderEmptyState}
                     />
                 )}
