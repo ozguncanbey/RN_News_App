@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useLayoutEffect, useCallback } from 'react'; // useLayoutEffect, useCallback import edildi
 import { View, Text, TextInput, ActivityIndicator, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, TextInputProps } from 'react-native';
 import { useRouter } from 'expo-router';
 import NewsList from '../../components/NewsList';
@@ -10,9 +10,12 @@ import { SORT_TYPES } from '../../constants/sortTypes';
 import { useFetchNews } from '../../hooks/useFetchNews';
 import { NewsArticle } from '../../types/news';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native'; // useNavigation import edildi
+import Colors from '@/constants/Colors';
 
 const HomeScreen = () => {
   const router = useRouter();
+  const navigation = useNavigation(); // useNavigation hook'u çağrıldı
 
   const [query, setQuery] = useState('');
   const [country, setCountry] = useState('us');
@@ -29,45 +32,63 @@ const HomeScreen = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => { // useCallback eklendi
     setQuery(searchText.trim());
     inputRef.current?.blur();
-  };
+  }, [searchText]); // searchText bağımlılığı
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => { // useCallback eklendi
     setSearchText('');
     setQuery('');
     inputRef.current?.blur();
-  };
+  }, []); // Bağımlılık yok
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => { // useCallback eklendi
     if (query !== '') {
       setQuery('');
     } else {
       console.log("Refreshing...");
+      // Gerçek yenileme için useFetchNews hook'una refetch fonksiyonu eklenebilir
     }
-  };
+  }, [query]); // query bağımlılığı
 
-  const handleFilterSelect = (value: string) => {
+  const handleFilterSelect = useCallback((value: string) => { // useCallback eklendi
     if (query.trim() === '') {
       setCountry(value);
     } else {
       setSortType(value as 'popularity' | 'publishedAt');
     }
     setMenuVisible(false);
-  };
+  }, [query]); // query bağımlılığı
 
-  const filterOptions = query.trim() === '' ? COUNTRIES : SORT_TYPES;
+  const filterOptions = useMemo(() => { // useMemo eklendi
+    return query.trim() === '' ? COUNTRIES : SORT_TYPES;
+  }, [query]); // query bağımlılığı
 
-  const handleItemPress = (item: NewsArticle) => {
+  const handleItemPress = useCallback((item: NewsArticle) => { // useCallback eklendi
     router.push({
       pathname: '/news/[id]',
       params: { id: item.url.split('/').pop() || 'detail', article: JSON.stringify(item) },
     });
-  };
+  }, [router]); // router bağımlılığı
 
   const showEmptyState = !isLoading && !articles.length && !error;
   const showList = articles.length > 0;
+
+  // Filtre menüsünü açacak butonu render eden fonksiyon
+  const renderHeaderRight = useCallback(() => (
+    <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginRight: 15 }}> {/* Sağdan boşluk ayarı */}
+      <MaterialIcons name="filter-list" size={24} color="#fff" /> {/* Başlık rengiyle uyumlu ikon rengi */}
+    </TouchableOpacity>
+  ), [setMenuVisible]); // setMenuVisible bağımlılığı
+
+  // Header seçeneklerini ayarlamak için useLayoutEffect kullanıyoruz
+  useLayoutEffect(() => {
+    navigation.setOptions({ // navigation.setOptions kullanıldı
+      headerRight: renderHeaderRight,
+    });
+  }, [navigation, renderHeaderRight]); // navigation ve renderHeaderRight bağımlılıkları
+
 
   return (
     <View style={commonStyles.container}>
@@ -93,15 +114,16 @@ const HomeScreen = () => {
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginLeft: 8 }}>
+        {/* Filtre butonu header'a taşındı */}
+        {/* <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginLeft: 8 }}>
           <MaterialIcons name="filter-list" size={24} color="#333" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {isLoading && !articles.length ? (
         <ActivityIndicator size="large" color="#007AFF" style={commonStyles.loader} />
       ) : showEmptyState ? (
-        <EmptyState message={error ? error : "No news found."} />
+        <EmptyState message={error ? error : "Haber bulunamadı."} />
       ) : showList ? (
         <NewsList
           articles={articles}
@@ -127,7 +149,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
   } as ViewStyle,
   inputWrapper: {
     flexDirection: 'row',
@@ -148,12 +170,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 0,
     paddingHorizontal: 8,
-  },
+  } as TextStyle,
   cancelCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#999',
+    backgroundColor: Colors.light.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 4,

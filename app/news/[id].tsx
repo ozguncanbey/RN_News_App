@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useLayoutEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -13,17 +13,20 @@ import {
     TextStyle,
     ImageStyle,
 } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'; 
-import BookmarkService from '../../services/bookmarkService'; 
-import { useLocalSearchParams } from 'expo-router';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import BookmarkService from '../../services/bookmarkService';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { NewsArticle } from '../../types/news';
+import { useNavigation } from '@react-navigation/native'; // useNavigation import edildi
 
 const DetailScreen = () => {
     const { article } = useLocalSearchParams();
     const parsedArticle: NewsArticle | undefined = article ? JSON.parse(article as string) : undefined;
-    const [isBookmarked, setIsBookmarked] = useState(false);
 
-    // Eğer makale bilgisi gelmemişse boş bir ekran veya hata gösterebiliriz
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const router = useRouter();
+    const navigation = useNavigation(); // useNavigation hook'u çağrıldı
+
     if (!parsedArticle) {
         return (
             <View style={styles.errorContainer}>
@@ -32,7 +35,7 @@ const DetailScreen = () => {
         );
     }
 
-    const handleShare = async () => {
+    const handleShare = useCallback(async () => {
         try {
             await Share.share({
                 message: `${parsedArticle.title}\n${parsedArticle.url}`,
@@ -40,40 +43,59 @@ const DetailScreen = () => {
         } catch (error) {
             console.error('Error sharing:', error);
         }
-    };
+    }, [parsedArticle]);
 
-    const toggleBookmark = async () => {
+    const toggleBookmark = useCallback(async () => {
         if (isBookmarked) {
             await BookmarkService.removeBookmark(parsedArticle.url);
         } else {
             await BookmarkService.addBookmark(parsedArticle);
         }
         setIsBookmarked(!isBookmarked);
-    };
+    }, [isBookmarked, parsedArticle]);
 
-    const handleReadMore = () => {
+    const handleReadMore = useCallback(() => {
         if (parsedArticle.url) {
-            Linking.openURL(parsedArticle.url).catch(err => console.error('An error occurred', err)); // Hata yakalama eklendi
+            Linking.openURL(parsedArticle.url).catch(err => console.error('An error occurred', err));
         }
-    };
+    }, [parsedArticle]);
+
 
     useEffect(() => {
         const checkBookmark = async () => {
-            // parsedArticle.url'nin varlığını kontrol etmeliyiz
             if (parsedArticle?.url) {
                 const result = await BookmarkService.isBookmarked(parsedArticle.url);
                 setIsBookmarked(result);
             }
         };
         checkBookmark();
-    }, [parsedArticle?.url]); // Bağımlılık olarak parsedArticle.url kullanıldı
+    }, [parsedArticle?.url]);
+
+    // Header seçeneklerini ayarlamak için useLayoutEffect ve navigation.setOptions kullanıyoruz
+    useLayoutEffect(() => {
+        navigation.setOptions({ // router.setOptions yerine navigation.setOptions kullanıldı
+            headerRight: () => (
+                <View style={{ flexDirection: 'row', marginRight: 10 }}>
+                    <TouchableOpacity onPress={handleShare} style={{ marginLeft: 15 }}>
+                        <MaterialIcons name="share" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={toggleBookmark} style={{ marginLeft: 15 }}>
+                        <MaterialIcons
+                            name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+                            size={24}
+                            color="#fff"
+                        />
+                    </TouchableOpacity>
+                </View>
+            ),
+        });
+    }, [navigation, isBookmarked, handleShare, toggleBookmark]); // Bağımlılıklar güncellendi
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.title}>{parsedArticle.title}</Text>
 
-                {/* Resim URL'si alanını NewsArticle tipine göre urlToImage olarak güncelledik */}
                 {parsedArticle.urlToImage ? (
                     <Image
                         source={{ uri: parsedArticle.urlToImage }}
@@ -87,7 +109,6 @@ const DetailScreen = () => {
                 )}
 
                 <View style={styles.meta}>
-                    {/* Yazar ve Tarih alanları nullable olabilir */}
                     {parsedArticle.author && (
                         <Text style={styles.author}>
                             {parsedArticle.author}
@@ -100,40 +121,23 @@ const DetailScreen = () => {
                     )}
                 </View>
 
-                {/* Description alanı nullable olabilir */}
                 {parsedArticle.description && (
                     <Text style={styles.description}>{parsedArticle.description}</Text>
                 )}
 
-                {/* Content alanı nullable olabilir */}
                 <Text style={styles.contentText}>{parsedArticle.content || 'No content available.'}</Text>
 
-
-                {/* url alanı nullable olabilir */}
                 {parsedArticle.url && (
                     <TouchableOpacity onPress={handleReadMore}>
                         <Text style={styles.readMore}>Read More</Text>
                     </TouchableOpacity>
                 )}
 
-                <View style={styles.actionRow}>
-                    <TouchableOpacity onPress={handleShare}>
-                        <MaterialIcons name="share" size={24} color="#007AFF" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={toggleBookmark}>
-                        <MaterialIcons
-                            name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-                            size={24}
-                            color="#007AFF"
-                        />
-                    </TouchableOpacity>
-                </View>
             </ScrollView>
         </SafeAreaView>
     );
 };
 
-// Expo Router static options
 export const options = {
     title: 'Details',
     headerStyle: {
@@ -183,7 +187,7 @@ const styles = StyleSheet.create({
     author: {
         fontSize: 12,
         color: '#666',
-        flexShrink: 1, // Uzun yazarlar için satır atlamasını sağla
+        flexShrink: 1,
         marginRight: 8,
     } as TextStyle,
     date: {
@@ -205,18 +209,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#007AFF',
         fontWeight: '500',
-        textDecorationLine: 'underline', // Daha belirgin olması için altı çizili yapılabilir
+        textDecorationLine: 'underline',
     } as TextStyle,
-    actionRow: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        marginTop: 20,
-        gap: 16, // Elemanlar arasına boşluk ekler (RN 0.71+ veya polyfill)
-        // Gap desteklenmiyorsa:
-        // & > *: { marginRight: 16; } gibi stil yazabiliriz,
-        // veya her TouchableOpacity'ye marginRight ekleyip sonuncudan kaldırabiliriz.
-    } as ViewStyle,
-    errorContainer: { // Hata veya makale bulunamadığında gösterilecek stil
+    errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',

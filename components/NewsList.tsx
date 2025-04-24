@@ -78,7 +78,7 @@ const NewsList: React.FC<NewsListProps> = ({
                     onPress={() => onDelete?.(item.url)}
                     activeOpacity={0.8}
                 >
-                    <MaterialIcons name="delete" size={20} color="#fff" />
+                    <MaterialIcons name="bookmark-remove" size={20} color="#fff" />
                 </TouchableOpacity>
             )}
         </View>
