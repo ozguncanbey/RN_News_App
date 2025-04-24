@@ -1,53 +1,53 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-
-// Eğer varsayılan şablon Colors dosyasını kullanıyorsanız orayı güncelleyin
-// veya doğrudan renk kodlarını kullanın.
-// Biz burada doğrudan renk kodlarını kullanacağız.
-const PRIMARY_COLOR = '#007AFF';
-const TAB_INACTIVE_COLOR = '#999';
-const TAB_BACKGROUND_COLOR = '#fff';
-const HEADER_TINT_COLOR = '#fff'; // Başlık rengi (genellikle beyaz)
-const HEADER_BACKGROUND_COLOR = PRIMARY_COLOR; // Başlık arka plan rengi
+import Colors from '@/constants/Colors';
+import { useColorScheme } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // İkon kullanımı için
 
 export default function TabLayout() {
+  const colorScheme = useColorScheme();
+
+  const themeColors = Colors.light;
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: PRIMARY_COLOR,
-        tabBarInactiveTintColor: TAB_INACTIVE_COLOR,
+        tabBarActiveTintColor: themeColors.tabIconSelected,
+        tabBarInactiveTintColor: themeColors.tabIconDefault,
         tabBarStyle: {
-          backgroundColor: TAB_BACKGROUND_COLOR,
+          backgroundColor: themeColors.background,
         },
         headerStyle: {
-          backgroundColor: HEADER_BACKGROUND_COLOR,
+          backgroundColor: themeColors.headerBackground,
         },
-        headerTintColor: HEADER_TINT_COLOR,
-        // headerShown: false, // Başlık çubuğunu tamamen kaldırmak isterseniz
+        headerTintColor: themeColors.headerText,
       }}>
-      {/* Sekme tanımları burada yer alır. Örneğin: */}
-      {/* <Tabs.Screen
+      {/* Sekme tanımlarınızı buraya ekleyin veya güncelleyin */}
+      {/* Örnek Ana Sayfa Sekmesi */}
+      <Tabs.Screen
         name="index" // app/(tabs)/index.tsx dosyasına karşılık gelir
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+            <MaterialIcons name="home" color={color} size={24} />
           ),
+          headerShown: true,
+          // Sekmeye özel başlık stili gerekirse burada ezilebilir
+          // headerStyle: { backgroundColor: Colors.light.headerBackground },
+          // headerTintColor: Colors.light.headerText,
         }}
       />
-       <Tabs.Screen
-        name="explore" // app/(tabs)/explore.tsx dosyasına karşılık gelir
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
-          ),
-        }}
-      /> */}
+      {/* Diğer sekmeler (örn: Kayıtlı Haberler) buraya gelecek */}
+      {/* <Tabs.Screen
+             name="bookmarks" // Örnek olarak app/(tabs)/bookmarks.tsx
+             options={{
+                 title: 'Kayıtlı Haberler',
+                 tabBarIcon: ({ color, focused }) => (
+                     <MaterialIcons name={focused ? 'bookmark' : 'bookmark-outline'} color={color} size={24} />
+                 ),
+                 headerShown: true,
+             }}
+         /> */}
     </Tabs>
   );
 }
-
-// Not: app/news/[id].tsx dosyasındaki 'options' export'u,
-// o ekrana özel başlık stilini belirler ve buradaki varsayılanları ezer.
-// O dosyadaki başlık rengi zaten #007AFF olarak ayarlıydı.

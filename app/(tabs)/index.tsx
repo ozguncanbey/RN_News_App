@@ -101,7 +101,7 @@ const HomeScreen = () => {
       {isLoading && !articles.length ? (
         <ActivityIndicator size="large" color="#007AFF" style={commonStyles.loader} />
       ) : showEmptyState ? (
-        <EmptyState message={error ? error : "Haber bulunamadı."} />
+        <EmptyState message={error ? error : "No news found."} />
       ) : showList ? (
         <NewsList
           articles={articles}
