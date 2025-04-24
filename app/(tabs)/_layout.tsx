@@ -1,59 +1,53 @@
+import { Tabs } from 'expo-router';
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
+// Eğer varsayılan şablon Colors dosyasını kullanıyorsanız orayı güncelleyin
+// veya doğrudan renk kodlarını kullanın.
+// Biz burada doğrudan renk kodlarını kullanacağız.
+const PRIMARY_COLOR = '#007AFF';
+const TAB_INACTIVE_COLOR = '#999';
+const TAB_BACKGROUND_COLOR = '#fff';
+const HEADER_TINT_COLOR = '#fff'; // Başlık rengi (genellikle beyaz)
+const HEADER_BACKGROUND_COLOR = PRIMARY_COLOR; // Başlık arka plan rengi
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+        tabBarActiveTintColor: PRIMARY_COLOR,
+        tabBarInactiveTintColor: TAB_INACTIVE_COLOR,
+        tabBarStyle: {
+          backgroundColor: TAB_BACKGROUND_COLOR,
+        },
+        headerStyle: {
+          backgroundColor: HEADER_BACKGROUND_COLOR,
+        },
+        headerTintColor: HEADER_TINT_COLOR,
+        // headerShown: false, // Başlık çubuğunu tamamen kaldırmak isterseniz
       }}>
-      <Tabs.Screen
-        name="index"
+      {/* Sekme tanımları burada yer alır. Örneğin: */}
+      {/* <Tabs.Screen
+        name="index" // app/(tabs)/index.tsx dosyasına karşılık gelir
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
+          title: 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
           ),
         }}
       />
-      <Tabs.Screen
-        name="two"
+       <Tabs.Screen
+        name="explore" // app/(tabs)/explore.tsx dosyasına karşılık gelir
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Explore',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
+          ),
         }}
-      />
+      /> */}
     </Tabs>
   );
 }
+
+// Not: app/news/[id].tsx dosyasındaki 'options' export'u,
+// o ekrana özel başlık stilini belirler ve buradaki varsayılanları ezer.
+// O dosyadaki başlık rengi zaten #007AFF olarak ayarlıydı.
