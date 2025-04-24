@@ -163,9 +163,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    paddingVertical: 4, // Dikey dolgu artırıldı
     paddingHorizontal: 8,
-    color: '#000', // Metin rengi açıkça belirtildi
   } as TextStyle,
   cancelCircle: {
     width: 20,
