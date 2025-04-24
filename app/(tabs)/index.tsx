@@ -97,6 +97,7 @@ const HomeScreen = () => {
             ref={inputRef}
             style={styles.searchInput}
             placeholder="Search news..."
+            placeholderTextColor="#888" // Placeholder metin rengini belirttik
             value={searchText}
             onChangeText={setSearchText}
             onSubmitEditing={handleSearch}
@@ -112,7 +113,6 @@ const HomeScreen = () => {
             </TouchableOpacity>
           )}
         </View>
-        {/* Filtre butonu header'a taşındı */}
       </View>
 
       {isLoading && !articles.length ? (
@@ -139,8 +139,6 @@ const HomeScreen = () => {
   );
 };
 
-export default HomeScreen;
-
 const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
@@ -165,14 +163,15 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    paddingVertical: 0,
+    paddingVertical: 4, // Dikey dolgu artırıldı
     paddingHorizontal: 8,
+    color: '#000', // Metin rengi açıkça belirtildi
   } as TextStyle,
   cancelCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: Colors.light.tint, // Renk Colors.light.tint olarak güncellendi
+    backgroundColor: Colors.light.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 4,
@@ -185,3 +184,5 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   } as TextStyle,
 });
+
+export default HomeScreen;
