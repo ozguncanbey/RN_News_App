@@ -23,7 +23,7 @@ React Native News App is a lightweight yet powerful news reader application deve
       <td align="center"><strong>Search Results</strong></td>
     </tr>
     <tr>
-      <td><img src="PATH_TO_HOME_SCREENSHOT" width="250"/></td>
+      <td><img src="https://github.com/user-attachments/assets/b130bd5d-563d-4ab0-954a-b0e667b7bfb2" width="250"/></td>
       <td><img src="PATH_TO_SEARCH_SCREENSHOT" width="250"/></td>
     </tr>
     <tr>
