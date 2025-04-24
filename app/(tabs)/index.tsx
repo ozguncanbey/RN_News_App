@@ -97,10 +97,10 @@ const HomeScreen = () => {
       return null;
     }
     if (error) {
-      return <EmptyState message={`Hata: ${error}`} />;
+      return <EmptyState message={`Error: ${error}`} />;
     }
     if (!articles.length && !isLoadingMore) {
-      return <EmptyState message="Haber bulunamadı." />;
+      return <EmptyState message="No more news." />;
     }
     return null;
   }, [isLoading, error, articles.length, isLoadingMore]);
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
   } as ViewStyle,
   inputWrapper: {
     flexDirection: 'row',
@@ -184,7 +184,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 4,
     paddingHorizontal: 8,
-    color: '#000',
   } as TextStyle,
   cancelCircle: {
     width: 20,
