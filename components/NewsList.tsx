@@ -23,8 +23,9 @@ interface NewsListProps {
     onDelete?: (url: string) => void;
     deletingMode?: boolean;
     refreshing?: boolean;
-    onRefresh?: (() => void | Promise<void>) | null; // onRefresh tipi null'ı içerecek şekilde güncellendi
-    onEndReached?: (() => void | Promise<void>) | null; // onEndReached tipi null'ı içerecek şekilde güncellendi
+    onRefresh?: (() => void | Promise<void>) | null;
+    onEndReached?: (() => void | Promise<void>) | null;
+    onEndReachedThreshold?: number | null | undefined; // onEndReachedThreshold prop'u eklendi
     loadingMore?: boolean;
     ListEmptyComponent?: React.ComponentType<any> | React.ReactElement | null;
 }
@@ -37,6 +38,7 @@ const NewsList: React.FC<NewsListProps> = ({
     refreshing = false,
     onRefresh,
     onEndReached,
+    onEndReachedThreshold, // prop buraya eklendi
     loadingMore = false,
     ListEmptyComponent,
 }) => {
@@ -90,7 +92,7 @@ const NewsList: React.FC<NewsListProps> = ({
             refreshing={refreshing}
             onRefresh={onRefresh}
             onEndReached={onEndReached}
-            onEndReachedThreshold={0.5}
+            onEndReachedThreshold={onEndReachedThreshold} // prop FlatList'e iletildi
             ListFooterComponent={
                 loadingMore ? (
                     <ActivityIndicator size="small" color="#007AFF" style={{ marginVertical: 16 }} />

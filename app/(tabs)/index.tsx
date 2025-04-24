@@ -17,54 +17,84 @@ const HomeScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
 
-  const [query, setQuery] = useState('');
-  const [country, setCountry] = useState('us');
-  const [sortType, setSortType] = useState<'publishedAt' | 'popularity' | undefined>('publishedAt');
+  // Filtre ve arama parametrelerini tutan state'ler
+  const [query, setQuery] = useState(''); // Bu state arama inputunun değeri için kullanılıyor
+  const [country, setCountry] = useState('us'); // Filtre state'i
+  const [sortType, setSortType] = useState<'publishedAt' | 'popularity' | undefined>('publishedAt'); // Filtre state'i
 
+  // useFetchNews hook'unu filtre/arama parametreleri ile çağır
   const {
     articles,
     isLoading,
     isLoadingMore,
     error,
-    refetch,
+    refetch, // refetch fonksiyonu alındı
     loadMore,
     totalResults,
     hasMore,
   } = useFetchNews({
-    query,
-    country: query.trim() === '' ? country : undefined,
-    sortType: query.trim() !== '' ? sortType : undefined,
+    query, // Hook'a başlangıç query'si olarak gönderiliyor
+    country: query.trim() === '' ? country : undefined, // Başlangıç ülke filtresi
+    sortType: query.trim() !== '' ? sortType : undefined, // Başlangıç sıralama filtresi
+    // initialPage ve initialPageSize hook içinde varsayılan değerde
   });
 
-  const [searchText, setSearchText] = useState(query);
+  const [searchText, setSearchText] = useState(query); // Arama inputunun değeri için state
   const [isFocused, setIsFocused] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
+  // Arama butonuna basıldığında veya klavyeden submit edildiğinde çalışır
   const handleSearch = useCallback(() => {
-    setQuery(searchText.trim());
+    const newQuery = searchText.trim();
+    // refetch fonksiyonunu yeni query değeri ve o anki filtre state'leri ile çağır
+    refetch({
+      query: newQuery,
+      country: newQuery.trim() === '' ? country : undefined, // Arama varsa ülke filtresi kaldırılır
+      sortType: newQuery.trim() !== '' ? sortType : undefined, // Arama yoksa sıralama filtresi kaldırılır
+    });
+    // Arama inputunun state'ini de güncelleyelim ki UI doğru görünsün
+    setQuery(newQuery);
     inputRef.current?.blur();
-  }, [searchText]);
+  }, [searchText, country, sortType, refetch]); // Bağımlılıklar güncellendi
 
+  // İptal butonuna basıldığında çalışır
   const handleCancel = useCallback(() => {
-    setSearchText('');
+    setSearchText(''); // Arama inputunu temizle
+    // refetch fonksiyonunu boş query ve o anki ülke filtresi ile çağır
+    refetch({
+      query: '',
+      country: country, // Arama temizlenince ülke filtresi geri gelir
+      sortType: undefined, // Arama temizlenince sıralama filtresi kaldırılır
+    });
+    // Query state'ini de temizleyelim ki UI doğru görünsün
     setQuery('');
     inputRef.current?.blur();
-  }, []);
+  }, [country, refetch]); // Bağımlılıklar güncellendi
 
+  // Aşağı çekerek yenileme handler'ı
   const handleRefresh = useCallback(async () => {
-    console.log("Mevcut sorgu ile yenileniyor:", query);
-    await refetch();
-  }, [query, refetch]);
+    console.log("Mevcut sorgu ve filtre ile yenileniyor (sayfa 1):", { query, country, sortType });
+    // refetch fonksiyonunu o anki güncel state değerleri ile çağır
+    await refetch({
+      query: query,
+      country: query.trim() === '' ? country : undefined,
+      sortType: query.trim() !== '' ? sortType : undefined,
+    });
+  }, [query, country, sortType, refetch]); // Bağımlılıklar güncellendi
 
+  // Filtre seçildiğinde çalışır
   const handleFilterSelect = useCallback((value: string) => {
-    if (query.trim() === '') {
-      setCountry(value);
-    } else {
-      setSortType(value as 'popularity' | 'publishedAt');
+    // Filtre seçildiğinde, ilgili filtre parametreleri ve mevcut query değeri ile refetch çağrısı yapılıyor.
+    if (query.trim() === '') { // Arama yoksa ülke filtresi uygulanır
+      refetch({ country: value, query: '' });
+      setCountry(value); // UI state'ini güncelle
+    } else { // Arama varsa sıralama filtresi uygulanır
+      refetch({ sortType: value as 'popularity' | 'publishedAt', query });
+      setSortType(value as 'popularity' | 'publishedAt'); // UI state'ini güncelle
     }
     setMenuVisible(false);
-  }, [query]);
+  }, [query, refetch]); // query ve refetch bağımlılıkları
 
   const filterOptions = useMemo(() => {
     return query.trim() === '' ? COUNTRIES : SORT_TYPES;
@@ -97,10 +127,10 @@ const HomeScreen = () => {
       return null;
     }
     if (error) {
-      return <EmptyState message={`Error: ${error}`} />;
+      return <EmptyState message={`Hata: ${error}`} />;
     }
     if (!articles.length && !isLoadingMore) {
-      return <EmptyState message="No more news." />;
+      return <EmptyState message="Haber bulunamadı." />;
     }
     return null;
   }, [isLoading, error, articles.length, isLoadingMore]);
@@ -108,6 +138,7 @@ const HomeScreen = () => {
 
   return (
     <View style={commonStyles.container}>
+      {/* Arama Çubuğu */}
       <View style={styles.searchRow}>
         <View style={styles.inputWrapper}>
           <Text style={styles.searchIcon}>🔍</Text>
@@ -133,6 +164,7 @@ const HomeScreen = () => {
         </View>
       </View>
 
+      {/* Ana İçerik Alanı */}
       {isLoading && !articles.length ? (
         <ActivityIndicator size="large" color="#007AFF" style={commonStyles.loader} />
       ) : (
@@ -140,14 +172,15 @@ const HomeScreen = () => {
           articles={articles}
           onItemPress={handleItemPress}
           refreshing={isLoading}
-          onRefresh={handleRefresh}
+          onRefresh={handleRefresh} // Güncellenmiş handleRefresh fonksiyonu bağlandı
           onEndReached={hasMore ? loadMore : null}
-          // onEndReachedThreshold prop'u buradan kaldırıldı
+          onEndReachedThreshold={0.5} // NewsList componentinde tanımlı olmalı
           loadingMore={isLoadingMore}
           ListEmptyComponent={renderListEmptyComponent}
         />
       )}
 
+      {/* Filtre Menüsü Modal */}
       <FilterMenu
         visible={menuVisible}
         options={filterOptions}
@@ -184,6 +217,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 4,
     paddingHorizontal: 8,
+    color: '#000',
   } as TextStyle,
   cancelCircle: {
     width: 20,
