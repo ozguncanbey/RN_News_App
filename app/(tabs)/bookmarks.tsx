@@ -60,10 +60,10 @@ const BookmarkScreen = () => {
             await BookmarkService.removeBookmark(url);
             // Sadece silineni listeden çıkarmak yerine tüm listeyi yeniden çekmek daha güvenli olabilir
             await loadBookmarks();
-            toastRef.current?.show('Yer işareti kaldırıldı.'); // Mesaj güncellendi
+            toastRef.current?.show('Bookmark removed.'); // Mesaj güncellendi
         } catch (error) {
             console.error("Error deleting bookmark:", error);
-            toastRef.current?.show('Yer işareti kaldırılırken bir hata oluştu.');
+            toastRef.current?.show('Error deleting bookmark.');
         }
     };
 
@@ -78,7 +78,7 @@ const BookmarkScreen = () => {
 
 
     // NewsList componentine verilecek ListEmptyComponent
-    const renderEmptyState = () => <EmptyState message={isRefreshing ? "Yükleniyor..." : "Kayıtlı haber bulunamadı."} />;
+    const renderEmptyState = () => <EmptyState message={isRefreshing ? "Loading" : "No bookmarked news."} />;
 
 
     return (
@@ -129,9 +129,7 @@ const styles = StyleSheet.create({
     } as ViewStyle,
     container: {
         flex: 1,
-        // NewsList zaten padding alıyor, burada vermeyebiliriz veya NewsList'in paddingini kaldırıp burada verebiliriz
-        // Şimdilik NewsList paddingini koruyalım, bu container sadece esnemesini sağlasın
-        // padding: 16,
+        padding: 16,
     } as ViewStyle,
     initialLoader: { // İlk yüklenme anı için stil
         flex: 1,
@@ -152,7 +150,7 @@ const styles = StyleSheet.create({
         shadowRadius: 4.65,
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 1, // Diğer elemanların üstünde olması için
+        zIndex: 1,
     } as ViewStyle,
 });
 

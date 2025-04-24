@@ -163,9 +163,7 @@ const styles = StyleSheet.create({
     } as TextStyle,
     listContent: {
         paddingBottom: 16,
-        // Eğer liste boşsa ortalanması için
         flexGrow: 1,
-        justifyContent: 'center',
     } as ViewStyle,
     deleteButton: {
         backgroundColor: 'red',
